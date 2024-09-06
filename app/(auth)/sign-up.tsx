@@ -1,3 +1,4 @@
+import { useSignUp } from "@clerk/clerk-expo";
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Alert, Image, ScrollView, Text, View } from "react-native";
@@ -9,6 +10,7 @@ import OAuth from "@/components/OAuth";
 import { icons, images } from "@/constants";
 
 const SignUp = () => {
+  const { isLoaded, signUp, setActive } = useSignUp();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [form, setForm] = useState({
@@ -22,8 +24,54 @@ const SignUp = () => {
     code: "",
   });
 
-  const onSignUpPress = async () => {};
-  const onPressVerify = async () => {};
+  const onSignUpPress = async () => {
+    if (!isLoaded) return;
+    try {
+      await signUp.create({
+        emailAddress: form.email,
+        password: form.password,
+      });
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      setVerification({
+        ...verification,
+        state: "pending",
+      });
+      console.log("come here");
+    } catch (err: any) {
+      // See https://clerk.com/docs/custom-flows/error-handling
+      // for more info on error handling
+      Alert.alert("Error", err.errors[0].longMessage);
+    }
+  };
+  const onPressVerify = async () => {
+    if (!isLoaded) return;
+    try {
+      const completeSignUp = await signUp.attemptEmailAddressVerification({
+        code: verification.code,
+      });
+      if (completeSignUp.status === "complete") {
+        await setActive({ session: completeSignUp.createdSessionId });
+        setVerification({
+          ...verification,
+          state: "success",
+        });
+      } else {
+        setVerification({
+          ...verification,
+          error: "Verification failed. Please try again.",
+          state: "failed",
+        });
+      }
+    } catch (err: any) {
+      // See https://clerk.com/docs/custom-flows/error-handling
+      // for more info on error handling
+      setVerification({
+        ...verification,
+        error: err.errors[0].longMessage,
+        state: "failed",
+      });
+    }
+  };
   return (
     <ScrollView className="flex-1 bg-white">
       <View className="flex-1 bg-white">

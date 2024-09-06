@@ -1,5 +1,4 @@
-import { router } from "expo-router";
-import { Alert, Image, Text, View } from "react-native";
+import { Image, Text, View } from "react-native";
 
 import CustomButton from "@/components/CustomButton";
 import { icons } from "@/constants";
